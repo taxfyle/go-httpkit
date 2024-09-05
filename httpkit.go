@@ -11,12 +11,16 @@ import (
 
 type Handler interface {
 	http.Handler
-
-	MatchPath(path string) bool
 }
 
 type Server struct {
-	Handlers []Handler
+	mux *http.ServeMux
+}
+
+func NewServer(mux *http.ServeMux) *Server {
+	return &Server{
+		mux: mux,
+	}
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -38,14 +42,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		).Info()
 	}()
 
-	for _, h := range s.Handlers {
-		if h.MatchPath(r.URL.Path) {
-			h.ServeHTTP(lrw, r.WithContext(ctx))
-			return
-		}
-	}
-
-	lrw.WriteHeader(http.StatusNotFound)
+	s.mux.ServeHTTP(lrw, r.WithContext(ctx))
 }
 
 type ResponseWriter struct {

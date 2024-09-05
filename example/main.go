@@ -13,6 +13,33 @@ import (
 	"go.uber.org/zap"
 )
 
+type echoHandler struct {
+}
+
+func (h *echoHandler) Get(w http.ResponseWriter, r *http.Request) {
+	logger := log.FromContext(r.Context())
+	logger.Debug("handling echo request")
+
+	route := r.URL.Path
+	logger.Debugf("handling route %s", route)
+
+	id := r.PathValue("id")
+	logger.Infof("GET id %v", id)
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func (h *echoHandler) Delete(w http.ResponseWriter, r *http.Request) {
+	logger := log.FromContext(r.Context())
+	logger.Debug("handling DELETE echo request")
+
+	route := r.URL.Path
+	logger.Debugf("handling route %s", route)
+
+	id := r.PathValue("id")
+	logger.Infof("DELETE id %v", id)
+}
+
 func main() {
 	logger, err := zap.NewDevelopment()
 	if err != nil {
@@ -26,15 +53,17 @@ func main() {
 
 	log.BaseLogger.Info("booting server")
 
+	echoHandler := &echoHandler{}
+	healthHandler := &health.Handler{}
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /health/readiness", healthHandler.GetReadiness)
+	mux.HandleFunc("GET /echo/{id}", echoHandler.Get)
+	mux.HandleFunc("DELETE /echo/{id}", echoHandler.Delete)
+
 	s := http.Server{
-		Addr: ":9999",
-		Handler: &httpkit.Server{
-			Handlers: []httpkit.Handler{
-				&health.Handler{
-					Path: "/health",
-				},
-			},
-		},
+		Addr:    ":9999",
+		Handler: httpkit.NewServer(mux),
 	}
 
 	go func() {
