@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/taxfyle/go-httpkit/v2/log"
+	"github.com/taxfyle/go-httpkit/log"
 	"go.uber.org/zap"
 )
 
