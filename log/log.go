@@ -21,6 +21,15 @@ type Logger struct {
 	ID string
 }
 
+func NewBaseLogger(ctx context.Context) (context.Context, *Logger) {
+	logger := &Logger{
+		ID:            "base-logger",
+		SugaredLogger: BaseLogger.With("log.id", "base-logger"),
+	}
+
+	return context.WithValue(ctx, keyLogger, logger), logger
+}
+
 func NewContext(ctx context.Context, logger *Logger) (context.Context, *Logger) {
 	if logger == nil {
 		id := uuid.New().String()

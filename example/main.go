@@ -41,17 +41,18 @@ func (h *echoHandler) Delete(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	logger, err := zap.NewDevelopment()
+	l, err := zap.NewDevelopment()
 	if err != nil {
 		panic(err)
 	}
 
-	defer logger.Sync()
-	log.BaseLogger = logger.Sugar()
+	defer l.Sync()
+	log.BaseLogger = l.Sugar()
 
 	ctx, cancel := context.WithCancel(context.Background())
+	ctx, logger := log.NewBaseLogger(ctx)
 
-	log.BaseLogger.Info("booting server")
+	logger.Info("booting server")
 
 	echoHandler := &echoHandler{}
 	healthHandler := &health.Handler{}
@@ -70,7 +71,7 @@ func main() {
 		logger.Info("running server")
 
 		if err := s.ListenAndServe(); err != http.ErrServerClosed {
-			log.BaseLogger.With("error", err).Fatal("error serving http")
+			logger.With("error", err).Fatal("error serving http")
 		}
 	}()
 
@@ -81,7 +82,7 @@ func main() {
 		<-c
 		logger.Info("received shutdown signal, cleaning up")
 		if err := s.Shutdown(ctx); err != nil {
-			log.BaseLogger.With("error", err).Error("unable to cleanly exit server")
+			logger.With("error", err).Error("unable to cleanly exit server")
 		}
 		cancel()
 	}()
