@@ -24,7 +24,7 @@ type Logger struct {
 func NewBaseLogger(ctx context.Context) (context.Context, Logger) {
 	l := Logger{
 		ID:            "base-logger",
-		SugaredLogger: BaseLogger,
+		SugaredLogger: BaseLogger.With("log.id", "base-logger"),
 	}
 
 	return context.WithValue(ctx, keyLogger, l), l
