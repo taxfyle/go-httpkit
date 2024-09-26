@@ -10,7 +10,7 @@ type Handler struct {
 }
 
 func (h *Handler) GetReadiness(w http.ResponseWriter, r *http.Request) {
-	logger := log.FromContext(r.Context())
+	logger := log.FromContext(r.Context()).Sugar()
 	logger.Debug("handling health request")
 
 	route := r.URL.Path

@@ -6,7 +6,15 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/taxfyle/go-httpkit/log"
+	"go.uber.org/zap"
+)
+
+type ctxkey string
+
+var (
+	keyRequestID ctxkey = "github.com/taxfyle/go-httpkit:request_id"
 )
 
 type Handler interface {
@@ -24,7 +32,10 @@ func NewServer(mux *http.ServeMux) *Server {
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx, logger := log.NewContext(r.Context(), nil)
+	requestID := uuid.New().String()
+	ctx := context.WithValue(r.Context(), keyRequestID, requestID)
+
+	logger := log.FromContext(ctx).With(zap.String("request.id", requestID))
 
 	timeStart := time.Now()
 
@@ -34,7 +45,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	defer func() {
-		logger.WithFields(
+		logger.Sugar().With(
 			"http.method", r.Method,
 			"http.path", r.URL.Path,
 			"http.status", lrw.status,
@@ -42,7 +53,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		).Info()
 	}()
 
-	s.mux.ServeHTTP(lrw, r.WithContext(ctx))
+	s.mux.ServeHTTP(lrw, r.WithContext(log.WithContext(ctx, logger)))
 }
 
 type ResponseWriter struct {
@@ -56,14 +67,18 @@ func (rw *ResponseWriter) WriteHeader(code int) {
 }
 
 func DefaultErrorHandler(ctx context.Context, rw http.ResponseWriter, err error, status int) {
-	logger := log.FromContext(ctx)
+	requestID, ok := ctx.Value(keyRequestID).(string)
+	if !ok {
+		requestID = "UNSET"
+	}
+	logger := log.FromContext(ctx).Sugar()
 
 	resp := struct {
 		Error     string `json:"error"`
 		RequestID string `json:"request_id"`
 	}{
 		Error:     err.Error(),
-		RequestID: logger.ID,
+		RequestID: requestID,
 	}
 
 	buf, err := json.Marshal(resp)

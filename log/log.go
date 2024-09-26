@@ -3,66 +3,26 @@ package log
 import (
 	"context"
 
-	"github.com/google/uuid"
 	"go.uber.org/zap"
 )
 
-var BaseLogger *zap.SugaredLogger
+var BaseLogger *zap.Logger
 
 type ctxkey string
 
 var (
-	keyLogger ctxkey = "github.com/taxfyle/go-httpkit/log"
+	keyLogger ctxkey = "github.com/taxfyle/go-httpkit/log:logger"
 )
 
-type Logger struct {
-	*zap.SugaredLogger
-
-	ID string
+func WithContext(ctx context.Context, logger *zap.Logger) context.Context {
+	return context.WithValue(ctx, keyLogger, logger)
 }
 
-func NewBaseLogger(ctx context.Context) (context.Context, *Logger) {
-	logger := &Logger{
-		ID:            "base-logger",
-		SugaredLogger: BaseLogger.With("log.id", "base-logger"),
-	}
-
-	return context.WithValue(ctx, keyLogger, logger), logger
-}
-
-func NewContext(ctx context.Context, logger *Logger) (context.Context, *Logger) {
-	if logger == nil {
-		id := uuid.New().String()
-
-		logger = &Logger{
-			SugaredLogger: BaseLogger.With("log.id", id),
-			ID:            id,
-		}
-	}
-
-	return context.WithValue(ctx, keyLogger, logger), logger
-}
-
-func FromContext(ctx context.Context) *Logger {
-	logger, ok := ctx.Value(keyLogger).(*Logger)
+func FromContext(ctx context.Context) *zap.Logger {
+	logger, ok := ctx.Value(keyLogger).(*zap.Logger)
 	if !ok {
-		return &Logger{
-			SugaredLogger: BaseLogger.With("log.id", "UNSET"),
-			ID:            "UNSET",
-		}
+		return BaseLogger.With() // return a copy of the base logger, not the original
 	}
 
 	return logger
-}
-
-func (l *Logger) WithField(key string, value interface{}) *Logger {
-	l.SugaredLogger = l.SugaredLogger.With(key, value)
-
-	return l
-}
-
-func (l *Logger) WithFields(args ...interface{}) *Logger {
-	l.SugaredLogger = l.SugaredLogger.With(args...)
-
-	return l
 }

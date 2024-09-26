@@ -17,7 +17,7 @@ type echoHandler struct {
 }
 
 func (h *echoHandler) Get(w http.ResponseWriter, r *http.Request) {
-	logger := log.FromContext(r.Context())
+	logger := log.FromContext(r.Context()).Sugar()
 	logger.Debug("handling echo request")
 
 	route := r.URL.Path
@@ -30,7 +30,7 @@ func (h *echoHandler) Get(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *echoHandler) Delete(w http.ResponseWriter, r *http.Request) {
-	logger := log.FromContext(r.Context())
+	logger := log.FromContext(r.Context()).Sugar()
 	logger.Debug("handling DELETE echo request")
 
 	route := r.URL.Path
@@ -47,10 +47,10 @@ func main() {
 	}
 
 	defer l.Sync()
-	log.BaseLogger = l.Sugar()
+	log.BaseLogger = l
 
 	ctx, cancel := context.WithCancel(context.Background())
-	ctx, logger := log.NewBaseLogger(ctx)
+	logger := log.FromContext(ctx).Sugar().With("thread", "main")
 
 	logger.Info("booting server")
 
