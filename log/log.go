@@ -21,32 +21,33 @@ type Logger struct {
 	ID string
 }
 
-func NewBaseLogger(ctx context.Context) (context.Context, *Logger) {
-	logger := &Logger{
+func NewBaseLogger(ctx context.Context) (context.Context, Logger) {
+	l := Logger{
 		ID:            "base-logger",
 		SugaredLogger: BaseLogger,
 	}
 
-	return context.WithValue(ctx, keyLogger, logger), logger
+	return context.WithValue(ctx, keyLogger, l), l
 }
 
-func NewContext(ctx context.Context, logger *Logger) (context.Context, *Logger) {
-	if logger == nil {
-		id := uuid.New().String()
-
-		logger = &Logger{
-			SugaredLogger: BaseLogger.With("log.id", id),
-			ID:            id,
-		}
+func NewContext(ctx context.Context, logger *Logger) (context.Context, Logger) {
+	id := uuid.New().String()
+	l := Logger{
+		SugaredLogger: BaseLogger.With("log.id", id),
+		ID:            id,
 	}
 
-	return context.WithValue(ctx, keyLogger, logger), logger
+	if logger != nil {
+		l = *logger
+	}
+
+	return context.WithValue(ctx, keyLogger, l), l
 }
 
-func FromContext(ctx context.Context) *Logger {
-	logger, ok := ctx.Value(keyLogger).(*Logger)
+func FromContext(ctx context.Context) Logger {
+	logger, ok := ctx.Value(keyLogger).(Logger)
 	if !ok {
-		return &Logger{
+		return Logger{
 			SugaredLogger: BaseLogger.With("log.id", "UNSET"),
 			ID:            "UNSET",
 		}
@@ -55,13 +56,13 @@ func FromContext(ctx context.Context) *Logger {
 	return logger
 }
 
-func (l *Logger) WithField(key string, value interface{}) *Logger {
+func (l Logger) WithField(key string, value interface{}) Logger {
 	l.SugaredLogger = l.SugaredLogger.With(key, value)
 
 	return l
 }
 
-func (l *Logger) WithFields(args ...interface{}) *Logger {
+func (l Logger) WithFields(args ...interface{}) Logger {
 	l.SugaredLogger = l.SugaredLogger.With(args...)
 
 	return l
