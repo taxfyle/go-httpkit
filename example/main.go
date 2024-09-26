@@ -7,9 +7,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/taxfyle/go-httpkit"
-	"github.com/taxfyle/go-httpkit/health"
-	"github.com/taxfyle/go-httpkit/log"
+	"github.com/taxfyle/go-httpkit/v2"
+	"github.com/taxfyle/go-httpkit/v2/health"
+	"github.com/taxfyle/go-httpkit/v2/log"
 	"go.uber.org/zap"
 )
 
