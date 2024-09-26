@@ -24,7 +24,7 @@ type Logger struct {
 func NewBaseLogger(ctx context.Context) (context.Context, *Logger) {
 	logger := &Logger{
 		ID:            "base-logger",
-		SugaredLogger: BaseLogger.Desugar().With(zap.String("log.id", "base-logger")).Sugar(),
+		SugaredLogger: BaseLogger,
 	}
 
 	return context.WithValue(ctx, keyLogger, logger), logger
@@ -35,7 +35,7 @@ func NewContext(ctx context.Context, logger *Logger) (context.Context, *Logger) 
 		id := uuid.New().String()
 
 		logger = &Logger{
-			SugaredLogger: BaseLogger.Desugar().With(zap.String("log.id", id)).Sugar(),
+			SugaredLogger: BaseLogger.With("log.id", id),
 			ID:            id,
 		}
 	}
@@ -47,7 +47,7 @@ func FromContext(ctx context.Context) *Logger {
 	logger, ok := ctx.Value(keyLogger).(*Logger)
 	if !ok {
 		return &Logger{
-			SugaredLogger: BaseLogger.Desugar().With(zap.String("log.id", "UNSET")).Sugar(),
+			SugaredLogger: BaseLogger.With("log.id", "UNSET"),
 			ID:            "UNSET",
 		}
 	}
