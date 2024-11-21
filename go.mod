@@ -1,4 +1,4 @@
-module github.com/taxfyle/go-httpkit/v4
+module github.com/taxfyle/go-httpkit/v5
 
 go 1.22.1
 

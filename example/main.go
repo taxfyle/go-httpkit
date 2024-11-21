@@ -9,9 +9,9 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/taxfyle/go-httpkit/v4"
-	"github.com/taxfyle/go-httpkit/v4/health"
-	"github.com/taxfyle/go-httpkit/v4/log"
+	"github.com/taxfyle/go-httpkit/v5"
+	"github.com/taxfyle/go-httpkit/v5/health"
+	"github.com/taxfyle/go-httpkit/v5/log"
 	"go.uber.org/zap"
 )
 

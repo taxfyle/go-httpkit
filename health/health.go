@@ -3,7 +3,7 @@ package health
 import (
 	"net/http"
 
-	"github.com/taxfyle/go-httpkit/v4/log"
+	"github.com/taxfyle/go-httpkit/v5/log"
 )
 
 type Handler struct {
