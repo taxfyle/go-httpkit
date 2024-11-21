@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"math/rand/v2"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/taxfyle/go-httpkit/v3"
 	"github.com/taxfyle/go-httpkit/v3/health"
@@ -25,6 +27,11 @@ func (h *echoHandler) Get(w http.ResponseWriter, r *http.Request) {
 
 	id := r.PathValue("id")
 	logger.Infof("GET id %v", id)
+
+	generator := rand.New(rand.NewPCG(0, uint64(time.Now().Unix())))
+	jitter := generator.IntN(6000)
+
+	time.Sleep(time.Duration(jitter) * time.Millisecond)
 
 	w.WriteHeader(http.StatusOK)
 }
@@ -62,9 +69,14 @@ func main() {
 	mux.HandleFunc("GET /echo/{id}", echoHandler.Get)
 	mux.HandleFunc("DELETE /echo/{id}", echoHandler.Delete)
 
+	server, err := httpkit.NewServer(mux, httpkit.ServerConfig{})
+	if err != nil {
+		panic(err)
+	}
+
 	s := http.Server{
 		Addr:    ":9999",
-		Handler: httpkit.NewServer(mux),
+		Handler: server,
 	}
 
 	go func() {
