@@ -10,7 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/taxfyle/go-httpkit/v3/log"
+	"github.com/taxfyle/go-httpkit/v4/log"
 	"go.uber.org/zap"
 )
 
