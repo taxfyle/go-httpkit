@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -45,7 +46,7 @@ func NewServer(mux *http.ServeMux, cfg ServerConfig) (*Server, error) {
 		Name:      "req_lat",
 		Buckets:   DefaultHistogramBuckets,
 		Help:      "Latencies of HTTP requests",
-	}, []string{"service", "path", "method", "code"})
+	}, []string{"service", "path", "method", "status"})
 
 	if err := prometheus.DefaultRegisterer.Register(latencyHistogram); err != nil {
 		return nil, err
@@ -72,6 +73,11 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	timeStart := time.Now()
 
+	// This handles the case when the matched route is just a path as well as a method and a path.
+	_, muxRoute := s.mux.Handler(r)
+	routeSegments := strings.Split(muxRoute, " ")
+	path := routeSegments[len(routeSegments)-1]
+
 	lrw := &ResponseWriter{
 		ResponseWriter: w,
 		status:         200,
@@ -82,16 +88,17 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 		s.latencyHistogram.WithLabelValues(
 			s.cfg.ServiceName,
-			r.URL.Path,
+			path,
 			r.Method,
 			fmt.Sprintf("%v", lrw.status)).
 			Observe(float64(latency.Milliseconds()))
 
 		logger.Sugar().With(
 			"http.method", r.Method,
-			"http.path", r.URL.Path,
+			"http.raw_path", r.URL.Path,
 			"http.status", lrw.status,
 			"http.response_time", latency.Milliseconds(),
+			"http.path", path,
 		).Info()
 	}()
 
