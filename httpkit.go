@@ -35,16 +35,25 @@ type Server struct {
 }
 
 type ServerConfig struct {
-	ServiceName    string
-	LatencyBuckets []float64
-	MetricsPath    string
+	MetricsNamespace string
+	ServiceName      string
+	LatencyBuckets   []float64
+	MetricsPath      string
 }
 
 func NewServer(mux *http.ServeMux, cfg ServerConfig) (*Server, error) {
+	if len(cfg.LatencyBuckets) < 1 {
+		cfg.LatencyBuckets = DefaultHistogramBuckets
+	}
+
+	if cfg.MetricsNamespace == "" {
+		cfg.MetricsNamespace = "httpkit"
+	}
+
 	latencyHistogram := prometheus.NewHistogramVec(prometheus.HistogramOpts{
-		Namespace: "httpkit",
-		Name:      "req_lat",
-		Buckets:   DefaultHistogramBuckets,
+		Namespace: cfg.MetricsNamespace,
+		Name:      "http_stats",
+		Buckets:   cfg.LatencyBuckets,
 		Help:      "Latencies of HTTP requests",
 	}, []string{"service", "path", "method", "status"})
 

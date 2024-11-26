@@ -9,6 +9,8 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/taxfyle/go-httpkit/v5"
 	"github.com/taxfyle/go-httpkit/v5/health"
 	"github.com/taxfyle/go-httpkit/v5/log"
@@ -16,6 +18,7 @@ import (
 )
 
 type echoHandler struct {
+	jitterGauge prometheus.Gauge
 }
 
 func (h *echoHandler) Get(w http.ResponseWriter, r *http.Request) {
@@ -29,7 +32,9 @@ func (h *echoHandler) Get(w http.ResponseWriter, r *http.Request) {
 	logger.Infof("GET id %v", id)
 
 	generator := rand.New(rand.NewPCG(0, uint64(time.Now().Unix())))
-	jitter := generator.IntN(6000)
+	jitter := generator.IntN(1000)
+
+	h.jitterGauge.Set(float64(jitter))
 
 	time.Sleep(time.Duration(jitter) * time.Millisecond)
 
@@ -61,7 +66,11 @@ func main() {
 
 	logger.Info("booting server")
 
-	echoHandler := &echoHandler{}
+	echoHandler := &echoHandler{
+		jitterGauge: promauto.NewGauge(prometheus.GaugeOpts{
+			Name: "echo_jitter",
+		}),
+	}
 	healthHandler := &health.Handler{}
 
 	mux := http.NewServeMux()
@@ -69,7 +78,10 @@ func main() {
 	mux.HandleFunc("GET /echo/{id}", echoHandler.Get)
 	mux.HandleFunc("DELETE /echo/{id}", echoHandler.Delete)
 
-	server, err := httpkit.NewServer(mux, httpkit.ServerConfig{})
+	server, err := httpkit.NewServer(mux, httpkit.ServerConfig{
+		MetricsNamespace: "ex",
+		LatencyBuckets:   []float64{100, 200, 500, 1000},
+	})
 	if err != nil {
 		panic(err)
 	}
